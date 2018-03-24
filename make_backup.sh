@@ -21,7 +21,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 COMMENT
 
-# $Revision: 8676 $ $Date:: 2018-01-31 #$ $Author: serge $
+# $Revision: 8828 $ $Date:: 2018-03-23 #$ $Author: serge $
 
 #<hb>***************************************************************************
 #
@@ -61,7 +61,7 @@ arch_name=${name}_${datum}.tar.gz
 
 echo "MB: dest = $dest/$arch_name"
 
-tar -zcvf $arch_name $src/*
+tar -zcvf $arch_name -C $src . --transform "s/^\./$name/"
 
 cp $arch_name "$dest"
 
