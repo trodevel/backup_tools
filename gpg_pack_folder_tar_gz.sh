@@ -43,8 +43,8 @@ show_help()
 
 datum=$( date -u +"%Y%m%d_%H%M" )
 
-src=$1
-dest=$2
+src="$1"
+dest="$2"
 
 [[ -z "$src" ]]  && show_help && exit;
 [[ -z "$dest" ]] && dest=$src.tar.gz.gpg;
@@ -55,4 +55,4 @@ name=$(basename $src)
 
 #echo "DBG: dest = $dest"
 
-tar -zcv $src | gpg -c -o $dest
+tar -zcv "$src" | gpg -c -o "$dest"

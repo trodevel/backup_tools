@@ -47,4 +47,4 @@ src=$1
 
 test -f "$src" || { echo "ERROR: source file $src doesn't exit"; exit; }
 
-gpg -d $src | tar xzv
+gpg -d "$src" | tar xzv
