@@ -45,18 +45,25 @@ mkdir -p "$HOME/backup"
 # Generate timestamped filename
 TIMESTAMP=$(date +"%Y-%m-%d_%H%M")
 
-# Build exclusion array
-EXCLUDES=("--exclude=$HOME/backup")
+# Build exclusion array using relative paths matching tar's context
+EXCLUDES=(
+  "--exclude=backup"
+  "--exclude=./backup"
+)
 
 if [ "$NOCACHE" = true ]; then
-  EXCLUDES+=("--exclude=$HOME/.cache")
-  EXCLUDES+=("--exclude=$HOME/.mozilla/firefox/*.default*/cache2")
-  EXCLUDES+=("--exclude=$HOME/.mozilla/firefox/*.default-release*/cache2")
+  EXCLUDES+=(
+    "--exclude=.cache"
+    "--exclude=./.cache"
+    "--exclude=.mozilla/firefox/*.default*/cache2"
+    "--exclude=./.mozilla/firefox/*.default*/cache2"
+    "--exclude=.mozilla/firefox/*.default-release*/cache2"
+    "--exclude=./.mozilla/firefox/*.default-release*/cache2"
+  )
 fi
 
 # Unencrypted Backup Path
 BACKUP_FILE="$HOME/backup/backup_home_${USER}_${TIMESTAMP}.tar.gz"
-
 
 # Run backup depending on encryption flag
 if [ -n "$PASSWORD" ]; then
@@ -66,6 +73,5 @@ if [ -n "$PASSWORD" ]; then
   tar -czv "${EXCLUDES[@]}" -C "$HOME" . | \
     gpg --symmetric --batch --yes --passphrase "$PASSWORD" -o "$BACKUP_FILE"
 else
-
   tar -czvf "$BACKUP_FILE" "${EXCLUDES[@]}" -C "$HOME" .
 fi
