@@ -1,29 +1,41 @@
 #!/bin/bash
 
 PASSWORD=""
+NOCACHE=false
 
-# Parse command line options
-while getopts ":p:" opt; do
-  case ${opt} in
-    p )
-      PASSWORD="$OPTARG"
+# Parse long and short options using getopt
+PARSED_ARGS=$(getopt -o p: --long nocache -- "$@")
+if [ $? -ne 0 ]; then
+  echo "Error: Invalid argument passed." >&2
+  exit 1
+fi
+
+eval set -- "$PARSED_ARGS"
+
+while true; do
+  case "$1" in
+    -p)
+      PASSWORD="$2"
+      shift 2
       ;;
-    \? )
-      echo "Error: Invalid option -$OPTARG" >&2
-      exit 1
+    --nocache)
+      NOCACHE=true
+      shift
       ;;
-    : )
-      echo "Error: Option -$OPTARG requires an argument." >&2
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "Error: Unexpected option processing." >&2
       exit 1
       ;;
   esac
 done
 
-# Shift to check for extraneous positional arguments
-shift $((OPTIND -1))
-
+# Exit with error if unexpected extra arguments remain
 if [ $# -gt 0 ]; then
-  echo "Error: Unexpected positional arguments provided." >&2
+  echo "Error: Unexpected positional argument(s): $*" >&2
   exit 1
 fi
 
@@ -33,24 +45,25 @@ mkdir -p "$HOME/backup"
 # Generate timestamped filename
 TIMESTAMP=$(date +"%Y-%m-%d_%H%M")
 
+# Build exclusion array
+EXCLUDES=("--exclude=$HOME/backup")
+
+if [ "$NOCACHE" = true ]; then
+  EXCLUDES+=("--exclude=$HOME/.cache")
+  EXCLUDES+=("--exclude=$HOME/.mozilla/firefox/*.default*/cache2")
+  EXCLUDES+=("--exclude=$HOME/.mozilla/firefox/*.default-release*/cache2")
+fi
+
+# Run backup depending on encryption flag
 if [ -n "$PASSWORD" ]; then
   # Encrypted Backup Path
   BACKUP_FILE="$HOME/backup/backup_home_${USER}_${TIMESTAMP}.tar.gz.gpg"
 
-  tar -czv \
-      --exclude="$HOME/backup" \
-      --exclude="$HOME/.cache" \
-      --exclude="$HOME/.mozilla/firefox/*.default*/cache2" \
-      --exclude="$HOME/.mozilla/firefox/*.default-release*/cache2" \
-      -C "$HOME" . | gpg --symmetric --batch --yes --passphrase "$PASSWORD" -o "$BACKUP_FILE"
+  tar -czv "${EXCLUDES[@]}" -C "$HOME" . | \
+    gpg --symmetric --batch --yes --passphrase "$PASSWORD" -o "$BACKUP_FILE"
 else
   # Unencrypted Backup Path
   BACKUP_FILE="$HOME/backup/backup_home_${USER}_${TIMESTAMP}.tar.gz"
 
-  tar -czvf "$BACKUP_FILE" \
-      --exclude="$HOME/backup" \
-      --exclude="$HOME/.cache" \
-      --exclude="$HOME/.mozilla/firefox/*.default*/cache2" \
-      --exclude="$HOME/.mozilla/firefox/*.default-release*/cache2" \
-      -C "$HOME" .
+  tar -czvf "$BACKUP_FILE" "${EXCLUDES[@]}" -C "$HOME" .
 fi
