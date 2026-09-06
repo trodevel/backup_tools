@@ -54,16 +54,18 @@ if [ "$NOCACHE" = true ]; then
   EXCLUDES+=("--exclude=$HOME/.mozilla/firefox/*.default-release*/cache2")
 fi
 
+# Unencrypted Backup Path
+BACKUP_FILE="$HOME/backup/backup_home_${USER}_${TIMESTAMP}.tar.gz"
+
+
 # Run backup depending on encryption flag
 if [ -n "$PASSWORD" ]; then
   # Encrypted Backup Path
-  BACKUP_FILE="$HOME/backup/backup_home_${USER}_${TIMESTAMP}.tar.gz.gpg"
+  BACKUP_FILE="${BACKUP_FILE}.gpg"
 
   tar -czv "${EXCLUDES[@]}" -C "$HOME" . | \
     gpg --symmetric --batch --yes --passphrase "$PASSWORD" -o "$BACKUP_FILE"
 else
-  # Unencrypted Backup Path
-  BACKUP_FILE="$HOME/backup/backup_home_${USER}_${TIMESTAMP}.tar.gz"
 
   tar -czvf "$BACKUP_FILE" "${EXCLUDES[@]}" -C "$HOME" .
 fi
